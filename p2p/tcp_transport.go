@@ -3,6 +3,7 @@ package p2p
 import (
 	"fmt"
 	"net"
+	"sync"
 )
 
 // TCPPeer represents the remote node over a TCP established connection.
@@ -24,10 +25,16 @@ func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 type TCPTransport struct {
 	listenAddr string
 	listener   net.Listener
+	shakeHands HandshakeFunc
+	decoder    Decoder
+
+	mu    sync.RWMutex
+	peers map[net.Addr]Peer
 }
 
 func NewTCPTransport(listenAddr string) *TCPTransport {
 	return &TCPTransport{
+		shakeHands: NOPHandshake,
 		listenAddr: listenAddr,
 	}
 }
@@ -49,11 +56,26 @@ func (t *TCPTransport) startAndAcceptLoop() {
 		if err != nil {
 			fmt.Printf("tcp error %s\n", err)
 		}
-
+		fmt.Println("new incomming connection ", conn)
 		go t.handleConn(conn)
 	}
 }
 
+type Temp struct{}
+
 func (t *TCPTransport) handleConn(conn net.Conn) {
-	fmt.Println("new incomming connection ", conn)
+	peer := NewTCPPeer(conn, true)
+
+	if err := t.shakeHands(peer); err != nil {
+
+	}
+
+	// Read Loop
+	msg := &Temp{}
+	for {
+		if err := t.decoder.Decode(conn, msg); err != nil {
+			fmt.Printf("TCP error: %s\n", err)
+			continue
+		}
+	}
 }
