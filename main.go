@@ -1,7 +1,23 @@
 package main
 
-import "fmt"
+import (
+	"log"
+
+	"github.com/mukeshmahato17/filesystem/p2p"
+)
 
 func main() {
-	fmt.Println("fs")
+	tcpOpts := p2p.TCPTransportOpts{
+		ListenAddr:    ":3000",
+		HandshakeFunc: p2p.NOPHandshake,
+		Decoder:       &p2p.DefaultDecoder{},
+	}
+
+	tr := p2p.NewTCPTransport(tcpOpts)
+
+	if err := tr.ListenAndAccept(); err != nil {
+		log.Fatal(err)
+	}
+
+	select {}
 }
